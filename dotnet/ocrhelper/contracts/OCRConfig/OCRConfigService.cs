@@ -32,9 +32,9 @@ namespace Chainlink.OCRConfig
             return new OCRConfigService(web3, receipt.ContractAddress);
         }
 
-        protected Nethereum.Web3.Web3 Web3 { get; set; }
+        protected Nethereum.Web3.Web3 Web3{ get; }
 
-        public ContractHandler ContractHandler { get; set; }
+        public ContractHandler ContractHandler { get; }
 
         public OCRConfigService(Nethereum.Web3.Web3 web3, string contractAddress)
         {

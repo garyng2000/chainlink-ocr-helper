@@ -1,0 +1,7 @@
+{
+    "projectName": "ocrHelperContracts",
+    "namespace": "Chainlink",
+    "lang": 0,
+    "autoCodeGen": false,
+    "projectPath": "./dotnet/ocrhelper/contracts"
+}
