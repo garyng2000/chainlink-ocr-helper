@@ -1,11 +1,10 @@
-// Sources flattened with hardhat v2.6.1 https://hardhat.org
+// Sources flattened with hardhat v2.8.0 https://hardhat.org
 
-// File contracts/chainlink/interfaces/AuthorizedReceiverInterface.sol
-
+// File chainlink/contracts/v0.7/interfaces/AuthorizedReceiverInterface.sol
 
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
 
+pragma solidity ^0.7.0;
 
 interface AuthorizedReceiverInterface {
 
@@ -30,10 +29,10 @@ interface AuthorizedReceiverInterface {
 }
 
 
-// File contracts/chainlink/AuthorizedReceiver.sol
+// File chainlink/contracts/v0.7/AuthorizedReceiver.sol
 
 
-
+pragma solidity ^0.7.0;
 abstract contract AuthorizedReceiver is
   AuthorizedReceiverInterface
 {
@@ -143,10 +142,10 @@ abstract contract AuthorizedReceiver is
 }
 
 
-// File contracts/chainlink/LinkTokenReceiver.sol
+// File chainlink/contracts/v0.7/LinkTokenReceiver.sol
 
 
-
+pragma solidity ^0.7.0;
 
 abstract contract LinkTokenReceiver {
 
@@ -167,9 +166,8 @@ abstract contract LinkTokenReceiver {
     validateFromLINK()
     permittedFunctionsForLINK(data)
   {
-        // solhint-disable-next-line no-inline-assembly
     assembly {
-      // solhint-disable-next-line no-inline-assembly
+      // solhint-disable-next-line avoid-low-level-calls
       mstore(add(data, 36), sender) // ensure correct sender is passed
       // solhint-disable-next-line avoid-low-level-calls
       mstore(add(data, 68), amount)    // ensure correct amount is passed
@@ -213,7 +211,6 @@ abstract contract LinkTokenReceiver {
     bytes memory data
   ) {
     bytes4 funcSelector;
-    // solhint-disable-next-line no-inline-assembly
     assembly {
       // solhint-disable-next-line avoid-low-level-calls
       funcSelector := mload(add(data, 32))
@@ -225,10 +222,10 @@ abstract contract LinkTokenReceiver {
 }
 
 
-// File contracts/chainlink/interfaces/OwnableInterface.sol
+// File chainlink/contracts/v0.7/interfaces/OwnableInterface.sol
 
 
-
+pragma solidity ^0.7.0;
 
 interface OwnableInterface {
   function owner()
@@ -247,10 +244,10 @@ interface OwnableInterface {
 }
 
 
-// File contracts/chainlink/ConfirmedOwnerWithProposal.sol
+// File chainlink/contracts/v0.7/ConfirmedOwnerWithProposal.sol
 
 
-
+pragma solidity ^0.7.0;
 /**
  * @title The ConfirmedOwner contract
  * @notice A contract with helpers for basic contract ownership.
@@ -279,6 +276,10 @@ contract ConfirmedOwnerWithProposal is OwnableInterface {
     if (pendingOwner != address(0)) {
       _transferOwnership(pendingOwner);
     }
+  }
+
+  function __ConfirmedOwnerWithProposal_init(address newOwner) internal {
+    s_owner = newOwner;
   }
 
   /**
@@ -361,10 +362,10 @@ contract ConfirmedOwnerWithProposal is OwnableInterface {
 }
 
 
-// File contracts/chainlink/ConfirmedOwner.sol
+// File chainlink/contracts/v0.7/ConfirmedOwner.sol
 
 
-
+pragma solidity ^0.7.0;
 /**
  * @title The ConfirmedOwner contract
  * @notice A contract with helpers for basic contract ownership.
@@ -381,13 +382,16 @@ contract ConfirmedOwner is ConfirmedOwnerWithProposal {
   {
   }
 
+  function __ConfirmedOwner_init(address newOwner) internal {
+    __ConfirmedOwnerWithProposal_init(newOwner);
+  }
 }
 
 
-// File contracts/chainlink/interfaces/LinkTokenInterface.sol
+// File chainlink/contracts/v0.7/interfaces/LinkTokenInterface.sol
 
 
-
+pragma solidity ^0.7.0;
 
 interface LinkTokenInterface {
 
@@ -493,10 +497,10 @@ interface LinkTokenInterface {
 }
 
 
-// File contracts/chainlink/interfaces/ChainlinkRequestInterface.sol
+// File chainlink/contracts/v0.7/interfaces/ChainlinkRequestInterface.sol
 
 
-
+pragma solidity ^0.7.0;
 
 interface ChainlinkRequestInterface {
   function oracleRequest(
@@ -519,10 +523,10 @@ interface ChainlinkRequestInterface {
 }
 
 
-// File contracts/chainlink/interfaces/OracleInterface.sol
+// File chainlink/contracts/v0.7/interfaces/OracleInterface.sol
 
 
-
+pragma solidity ^0.7.0;
 
 interface OracleInterface {
   function fulfillOracleRequest(
@@ -552,10 +556,10 @@ interface OracleInterface {
 }
 
 
-// File contracts/chainlink/interfaces/OperatorInterface.sol
+// File chainlink/contracts/v0.7/interfaces/OperatorInterface.sol
 
 
-
+pragma solidity ^0.7.0;
 interface OperatorInterface is
   ChainlinkRequestInterface,
   OracleInterface
@@ -599,10 +603,10 @@ interface OperatorInterface is
 }
 
 
-// File contracts/chainlink/interfaces/WithdrawalInterface.sol
+// File chainlink/contracts/v0.7/interfaces/WithdrawalInterface.sol
 
 
-
+pragma solidity ^0.7.0;
 
 interface WithdrawalInterface {
   /**
@@ -628,12 +632,22 @@ interface WithdrawalInterface {
 }
 
 
-// File contracts/chainlink/vendor/Address.sol
+// File chainlink/contracts/v0.7/interfaces/AccessControllerInterface.sol
+
+
+pragma solidity >=0.7.0;
+
+interface AccessControllerInterface {
+  function hasAccess(address user, bytes calldata data) external view returns (bool);
+}
+
+
+// File chainlink/contracts/v0.7/vendor/Address.sol
 
 
 // From https://github.com/OpenZeppelin/openzeppelin-contracts v3.4.0(fa64a1ced0b70ab89073d5d0b6e01b0778f7e7d6)
 
-
+pragma solidity >=0.6.2 <0.8.0;
 
 /**
  * @dev Collection of functions related to the address type
@@ -822,10 +836,10 @@ library Address {
 }
 
 
-// File contracts/chainlink/vendor/SafeMathChainlink.sol
+// File chainlink/contracts/v0.7/vendor/SafeMathChainlink.sol
 
 
-
+pragma solidity ^0.7.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -979,10 +993,10 @@ library SafeMathChainlink {
 }
 
 
-// File contracts/chainlink/Operator.sol
+// File chainlink/contracts/v0.7/Operator.sol
 
 
-
+pragma solidity ^0.7.0;
 /**
  * @title The Chainlink Operator contract
  * @notice Node operators can deploy this contract to fulfill requests sent to them
@@ -996,13 +1010,18 @@ contract Operator is
 {
   using Address for address;
   using SafeMathChainlink for uint256;
+  address constant public CLONER = address(0);
+  /**
+    * @dev Indicates that the contract has been initialized.
+    */
+  bool private _initialized;
 
   struct Commitment {
     bytes31 paramsHash;
     uint8 dataVersion;
   }
 
-  uint256 constant public GET_EXPIRY_TIME = 5 minutes;
+  uint256 constant public getExpiryTime = 5 minutes;
   uint256 constant private MAXIMUM_DATA_VERSION = 256;
   uint256 constant private MINIMUM_CONSUMER_GAS_LIMIT = 400000;
   uint256 constant private SELECTOR_LENGTH = 4;
@@ -1016,11 +1035,13 @@ contract Operator is
   // requestOracleData is version 2, enabling multi-word responses
   bytes4 constant private OPERATOR_REQUEST_SELECTOR = this.requestOracleData.selector;
 
-  LinkTokenInterface internal immutable linkToken;
-  mapping(bytes32 => Commitment) private sCommitments;
+  LinkTokenInterface internal linkToken;
+  mapping(bytes32 => Commitment) private s_commitments;
   // Tokens sent for requests that have not been fulfilled yet
-  uint256 private sTokensInEscrow = ONE_FOR_CONSISTENT_GAS_COST;
+  uint256 private s_tokensInEscrow = ONE_FOR_CONSISTENT_GAS_COST;
 
+  AccessControllerInterface internal s_requesterAccessController;
+  
   event OracleRequest(
     bytes32 indexed specId,
     address requester,
@@ -1052,6 +1073,13 @@ contract Operator is
   );
 
   /**
+   * @notice emitted when a new requester access controller contract is set
+   * @param old the address prior to the current setting
+   * @param current the address of the new access controller contract
+   */
+  event RequesterAccessControllerSet(AccessControllerInterface old, AccessControllerInterface current);
+
+  /**
    * @notice Deploy with the address of the LINK token
    * @dev Sets the LinkToken address for the imported LinkTokenInterface
    * @param link The address of the LINK token
@@ -1063,7 +1091,45 @@ contract Operator is
   )
     ConfirmedOwner(owner)
   {
+    require(link != address(0), "Cannot set linkToken to zero");
     linkToken = LinkTokenInterface(link); // external but already deployed and unalterable
+    _initialized = true;
+  }
+
+  function initialize(address link, address owner) public {
+    require(link != address(0), "Cannot set linkToken to zero");
+    require(!_initialized, "already initialized");
+    require(CLONER == address(0) || msg.sender == CLONER || msg.sender == address(this), "only from cloner");
+    __ConfirmedOwner_init(owner);
+    linkToken = LinkTokenInterface(link);
+    _initialized = true;
+  }
+
+  /**
+   * @notice address of the requester access controller contract
+   * @return requester access controller address
+   */
+  function requesterAccessController()
+    external
+    view
+    returns (AccessControllerInterface)
+  {
+    return s_requesterAccessController;
+  }
+
+  /**
+   * @notice sets the requester access controller
+   * @param _requesterAccessController designates the address of the new requester access controller
+   */
+  function setRequesterAccessController(AccessControllerInterface _requesterAccessController)
+    public
+    onlyOwner()
+  {
+    AccessControllerInterface oldController = s_requesterAccessController;
+    if (_requesterAccessController != oldController) {
+      s_requesterAccessController = AccessControllerInterface(_requesterAccessController);
+      emit RequesterAccessControllerSet(oldController, _requesterAccessController);
+    }
   }
 
   function oracleRequest(
@@ -1278,7 +1344,7 @@ contract Operator is
     public
     validateAuthorizedSenderSetter()
   {
-    emit TargetsUpdatedAuthorizedSenders(targets, senders, msg.sender);
+    TargetsUpdatedAuthorizedSenders(targets, senders, msg.sender);
 
     for (uint256 i = 0; i < targets.length; i++) {
       AuthorizedReceiverInterface(targets[i]).setAuthorizedSenders(senders);
@@ -1348,7 +1414,6 @@ contract Operator is
     validateNotToLINK(to)
   {
     require(to.isContract(), "Must forward to a contract");
-      // solhint-disable-next-line avoid-low-level-calls
     (bool status,) = to.call(data);
     require(status, "Forwarded call failed");
   }
@@ -1420,11 +1485,11 @@ contract Operator is
     override
   {
     bytes31 paramsHash = _buildFunctionHash(payment, msg.sender, callbackFunc, expiration);
-    require(sCommitments[requestId].paramsHash == paramsHash, "Params do not match request ID");
+    require(s_commitments[requestId].paramsHash == paramsHash, "Params do not match request ID");
     // solhint-disable-next-line not-rely-on-time
     require(expiration <= block.timestamp, "Request is not expired");
 
-    delete sCommitments[requestId];
+    delete s_commitments[requestId];
     emit CancelOracleRequest(requestId);
 
     assert(linkToken.transfer(msg.sender, payment));
@@ -1486,12 +1551,13 @@ contract Operator is
     )
   {
     requestId = keccak256(abi.encodePacked(sender, nonce));
-    require(sCommitments[requestId].paramsHash == 0, "Must use a unique ID");
+    require(s_commitments[requestId].paramsHash == 0, "Must use a unique ID");
+    require(address(s_requesterAccessController) == address(0) || s_requesterAccessController.hasAccess(sender,""),"Only retricted to specific client");
     // solhint-disable-next-line not-rely-on-time
-    expiration = block.timestamp.add(GET_EXPIRY_TIME);
+    expiration = block.timestamp.add(getExpiryTime);
     bytes31 paramsHash = _buildFunctionHash(payment, callbackAddress, callbackFunctionId, expiration);
-    sCommitments[requestId] = Commitment(paramsHash, _safeCastToUint8(dataVersion));
-    sTokensInEscrow = sTokensInEscrow.add(payment);
+    s_commitments[requestId] = Commitment(paramsHash, _safeCastToUint8(dataVersion));
+    s_tokensInEscrow = s_tokensInEscrow.add(payment);
     return (requestId, expiration);
   }
 
@@ -1514,10 +1580,10 @@ contract Operator is
     internal
   {
     bytes31 paramsHash = _buildFunctionHash(payment, callbackAddress, callbackFunctionId, expiration);
-    require(sCommitments[requestId].paramsHash == paramsHash, "Params do not match request ID");
-    require(sCommitments[requestId].dataVersion <= _safeCastToUint8(dataVersion), "Data versions must match");
-    sTokensInEscrow = sTokensInEscrow.sub(payment);
-    delete sCommitments[requestId];
+    require(s_commitments[requestId].paramsHash == paramsHash, "Params do not match request ID");
+    require(s_commitments[requestId].dataVersion <= _safeCastToUint8(dataVersion), "Data versions must match");
+    s_tokensInEscrow = s_tokensInEscrow.sub(payment);
+    delete s_commitments[requestId];
   }
 
   /**
@@ -1579,7 +1645,7 @@ contract Operator is
       uint256
     )
   {
-    uint256 inEscrow = sTokensInEscrow.sub(ONE_FOR_CONSISTENT_GAS_COST);
+    uint256 inEscrow = s_tokensInEscrow.sub(ONE_FOR_CONSISTENT_GAS_COST);
     return linkToken.balanceOf(address(this)).sub(inEscrow);
   }
 
@@ -1609,7 +1675,6 @@ contract Operator is
     bytes memory data
   ) {
     bytes32 firstWord;
-    // solhint-disable-next-line no-inline-assembly
     assembly{
       firstWord := mload(add(data, 0x20))
     }
@@ -1635,7 +1700,7 @@ contract Operator is
   modifier validateRequestId(
     bytes32 requestId
   ) {
-    require(sCommitments[requestId].paramsHash != 0, "Must have a valid requestId");
+    require(s_commitments[requestId].paramsHash != 0, "Must have a valid requestId");
     _;
   }
 

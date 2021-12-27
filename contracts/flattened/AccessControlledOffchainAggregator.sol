@@ -3,7 +3,6 @@
 // File contracts/AccessControllerInterface.sol
 
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.7.0;
 
 interface AccessControllerInterface {
@@ -111,16 +110,68 @@ interface LinkTokenInterface {
 }
 
 
-// File contracts/Owned.sol
+// File contracts/Initializable.sol
 
 
 pragma solidity ^0.7.0;
 
 /**
+ * @dev This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
+ * behind a proxy. Since a proxied contract can't have a constructor, it's common to move constructor logic to an
+ * external initializer function, usually called `initialize`. It then becomes necessary to protect this initializer
+ * function so it can only be called once. The {initializer} modifier provided by this contract will have this effect.
+ *
+ * TIP: To avoid leaving the proxy in an uninitialized state, the initializer function should be called as early as
+ * possible by providing the encoded function call as the `_data` argument to {ERC1967Proxy-constructor}.
+ *
+ * CAUTION: When used with inheritance, manual care must be taken to not invoke a parent initializer twice, or to ensure
+ * that all initializers are idempotent. This is not verified automatically as constructors are by Solidity.
+ */
+abstract contract Initializable {
+    /**
+     * @dev Indicates that the contract has been initialized.
+     */
+    bool private _initialized;
+
+    /**
+     * @dev Indicates that the contract is in the process of being initialized.
+     */
+    bool private _initializing;
+
+    /**
+     * @dev Modifier to protect an initializer function from being invoked twice.
+     */
+    modifier initializer() {
+        require(_initializing || !_initialized, "Initializable: contract is already initialized");
+
+        bool isTopLevelCall = !_initializing;
+        if (isTopLevelCall) {
+            _initializing = true;
+            _initialized = true;
+        }
+
+        _;
+
+        if (isTopLevelCall) {
+            _initializing = false;
+        }
+    }
+
+    function initialized() internal view returns(bool) {
+        return _initialized;
+    }
+}
+
+
+// File contracts/Owned.sol
+
+
+pragma solidity ^0.7.0;
+/**
  * @title The Owned contract
  * @notice A contract with helpers for basic contract ownership.
  */
-contract Owned {
+contract Owned is Initializable {
 
   address payable public owner;
   address private pendingOwner;
@@ -134,8 +185,28 @@ contract Owned {
     address indexed to
   );
 
-  constructor() {
-    owner = msg.sender;
+  // constructor() {
+  //   owner = msg.sender;
+  // }
+
+  /**
+  * @dev Initializes the contract setting the deployer as the initial owner.
+  */
+  function __Owned_init(address newOwner) internal initializer {
+      __Owned_init_unchained(newOwner);
+  }
+
+  function __Owned_init_unchained(address newOwner) internal initializer {
+      require(newOwner != address(0),"initial owner cannot be 0");
+      _setOwner(newOwner);
+  }
+
+  function _setOwner(address newOwner) private {
+      address oldOwner = owner;
+      owner = payable(newOwner);
+      if (oldOwner != newOwner) {
+        emit OwnershipTransferred(oldOwner, newOwner);
+      }
   }
 
   /**
@@ -320,7 +391,57 @@ contract OffchainAggregatorBilling is Owned {
   uint256 constant private  maxUint16 = (1 << 16) - 1;
   uint256 constant internal maxUint128 = (1 << 128) - 1;
 
-  constructor(
+  // constructor(
+  //   uint32 _maximumGasPrice,
+  //   uint32 _reasonableGasPrice,
+  //   uint32 _microLinkPerEth,
+  //   uint32 _linkGweiPerObservation,
+  //   uint32 _linkGweiPerTransmission,
+  //   LinkTokenInterface _link,
+  //   AccessControllerInterface _billingAccessController
+  // )
+  // {
+  //   setBillingInternal(_maximumGasPrice, _reasonableGasPrice, _microLinkPerEth,
+  //     _linkGweiPerObservation, _linkGweiPerTransmission);
+  //   s_linkToken = _link;
+  //   emit LinkTokenSet(LinkTokenInterface(address(0)), _link);
+  //   setBillingAccessControllerInternal(_billingAccessController);
+  //   uint16[maxNumOracles] memory counts; // See s_oracleObservationsCounts docstring
+  //   uint256[maxNumOracles] memory gas; // see s_gasReimbursementsLinkWei docstring
+  //   for (uint8 i = 0; i < maxNumOracles; i++) {
+  //     counts[i] = 1;
+  //     gas[i] = 1;
+  //   }
+  //   s_oracleObservationsCounts = counts;
+  //   s_gasReimbursementsLinkWei = gas;
+  // }
+
+  /**
+  * @dev Initializes the contract setting the deployer as the initial owner.
+  */
+  function __OffchainAggregatorBilling_init(
+    uint32 _maximumGasPrice,
+    uint32 _reasonableGasPrice,
+    uint32 _microLinkPerEth,
+    uint32 _linkGweiPerObservation,
+    uint32 _linkGweiPerTransmission,
+    LinkTokenInterface _link,
+    AccessControllerInterface _billingAccessController,
+    address _newOwner
+  ) internal initializer {
+    __Owned_init(_newOwner);
+    __OffchainAggregatorBilling_init_unchained(    
+    _maximumGasPrice,
+    _reasonableGasPrice,
+    _microLinkPerEth,
+    _linkGweiPerObservation,
+    _linkGweiPerTransmission,
+    _link,
+    _billingAccessController
+    );
+  }
+
+  function __OffchainAggregatorBilling_init_unchained(
     uint32 _maximumGasPrice,
     uint32 _reasonableGasPrice,
     uint32 _microLinkPerEth,
@@ -328,8 +449,7 @@ contract OffchainAggregatorBilling is Owned {
     uint32 _linkGweiPerTransmission,
     LinkTokenInterface _link,
     AccessControllerInterface _billingAccessController
-  )
-  {
+  ) internal initializer {
     setBillingInternal(_maximumGasPrice, _reasonableGasPrice, _microLinkPerEth,
       _linkGweiPerObservation, _linkGweiPerTransmission);
     s_linkToken = _link;
@@ -1007,7 +1127,7 @@ pragma solidity ^0.7.0;
   * @dev For details on its operation, see the offchain reporting protocol design
   * @dev doc, which refers to this contract as simply the "contract".
 */
-contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3Interface, TypeAndVersionInterface {
+contract OffchainAggregator is OffchainAggregatorBilling, AggregatorV2V3Interface, TypeAndVersionInterface {
 
   uint256 constant private maxUint32 = (1 << 32) - 1;
 
@@ -1046,9 +1166,9 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
                                              // to extract config from logs.
 
   // Lowest answer the system is allowed to report in response to transmissions
-  int192 immutable public minAnswer;
+  int192 public minAnswer;
   // Highest answer the system is allowed to report in response to transmissions
-  int192 immutable public maxAnswer;
+  int192 public maxAnswer;
 
   /*
    * @param _maximumGasPrice highest gas price for which transmitter will be compensated
@@ -1065,6 +1185,37 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
    * @param _description short human-readable description of observable this contract's answers pertain to
    */
   constructor(
+    // uint32 _maximumGasPrice,
+    // uint32 _reasonableGasPrice,
+    // uint32 _microLinkPerEth,
+    // uint32 _linkGweiPerObservation,
+    // uint32 _linkGweiPerTransmission,
+    // LinkTokenInterface _link,
+    // int192 _minAnswer,
+    // int192 _maxAnswer,
+    // AccessControllerInterface _billingAccessController,
+    // AccessControllerInterface _requesterAccessController,
+    // uint8 _decimals,
+    // string memory _description
+  )
+  {
+    // __OffchainAggregator_init(    
+    // _maximumGasPrice,
+    // _reasonableGasPrice,
+    // _microLinkPerEth,
+    // _linkGweiPerObservation,
+    // _linkGweiPerTransmission,
+    // _link,
+    // _minAnswer,
+    // _maxAnswer,
+    // _billingAccessController,
+    // _requesterAccessController,
+    // _decimals,
+    // _description
+    // );
+  }
+
+  function initialize(    
     uint32 _maximumGasPrice,
     uint32 _reasonableGasPrice,
     uint32 _microLinkPerEth,
@@ -1076,17 +1227,76 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
     AccessControllerInterface _billingAccessController,
     AccessControllerInterface _requesterAccessController,
     uint8 _decimals,
-    string memory _description
-  )
-    OffchainAggregatorBilling(_maximumGasPrice, _reasonableGasPrice, _microLinkPerEth,
-      _linkGweiPerObservation, _linkGweiPerTransmission, _link,
-      _billingAccessController
-    )
+    string memory _description,
+    address _newOwner
+  ) public virtual initializer 
   {
+    __OffchainAggregator_init(
+      _maximumGasPrice,
+      _reasonableGasPrice,
+      _microLinkPerEth,
+      _linkGweiPerObservation,
+      _linkGweiPerTransmission,
+      _link,
+      _minAnswer,
+      _maxAnswer,
+      _billingAccessController,
+      _requesterAccessController,
+      _decimals,
+      _description,
+      _newOwner
+    );
+  }
+
+  /**
+  * @dev Initializes the contract setting the deployer as the initial owner.
+  */
+  function __OffchainAggregator_init(
+    uint32 _maximumGasPrice,
+    uint32 _reasonableGasPrice,
+    uint32 _microLinkPerEth,
+    uint32 _linkGweiPerObservation,
+    uint32 _linkGweiPerTransmission,
+    LinkTokenInterface _link,
+    int192 _minAnswer,
+    int192 _maxAnswer,
+    AccessControllerInterface _billingAccessController,
+    AccessControllerInterface _requesterAccessController,
+    uint8 _decimals,
+    string memory _description,
+    address _newOwner
+
+  ) internal initializer {
+    __OffchainAggregatorBilling_init(    
+    _maximumGasPrice,
+    _reasonableGasPrice,
+    _microLinkPerEth,
+    _linkGweiPerObservation,
+    _linkGweiPerTransmission,
+    _link,
+    _billingAccessController,
+    _newOwner
+    );
+    __OffchainAggregator_init_unchained(    
+    _minAnswer,
+    _maxAnswer,
+    _requesterAccessController,
+    _decimals,
+    _description
+    );
+  }
+
+  function __OffchainAggregator_init_unchained(
+    int192 _minAnswer,
+    int192 _maxAnswer,
+    AccessControllerInterface _requesterAccessController,
+    uint8 _decimals,
+    string memory _description
+  ) internal initializer {
     decimals = _decimals;
     s_description = _description;
-    setRequesterAccessController(_requesterAccessController);
-    setValidatorConfig(AggregatorValidatorInterface(0x0), 0);
+    setRequesterAccessControllerInternal(_requesterAccessController);
+    setValidatorConfigInternal(AggregatorValidatorInterface(0x0), 0);
     minAnswer = _minAnswer;
     maxAnswer = _maxAnswer;
   }
@@ -1139,7 +1349,7 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
       _numSigners == _numTransmitters,
       "oracle addresses out of registration"
     );
-    require(_numSigners > 1 * _threshold, "faulty-oracle threshold too high");
+    require(_numSigners > 3 * _threshold, "faulty-oracle threshold too high");
     _;
   }
 
@@ -1311,6 +1521,12 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
     public
     onlyOwner()
   {
+    setValidatorConfigInternal(_newValidator, _newGasLimit);
+  }
+
+  function setValidatorConfigInternal(AggregatorValidatorInterface _newValidator, uint32 _newGasLimit)
+    internal
+  {
     ValidatorConfig memory previous = s_validatorConfig;
 
     if (previous.validator != _newValidator || previous.gasLimit != _newGasLimit) {
@@ -1388,6 +1604,12 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
   function setRequesterAccessController(AccessControllerInterface _requesterAccessController)
     public
     onlyOwner()
+  {
+    setRequesterAccessControllerInternal(_requesterAccessController);
+  }
+
+  function setRequesterAccessControllerInternal(AccessControllerInterface _requesterAccessController)
+    internal
   {
     AccessControllerInterface oldController = s_requesterAccessController;
     if (_requesterAccessController != oldController) {
@@ -1475,11 +1697,11 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
     external
     view
     returns (
-      bytes16 configDigest,
-      uint32 epoch,
-      uint8 round,
-      int192 latestAnswer,
-      uint64 latestTimestamp
+      bytes16 _configDigest,
+      uint32 _epoch,
+      uint8 _round,
+      int192 _latestAnswer,
+      uint64 _latestTimestamp
     )
   {
     require(msg.sender == tx.origin, "Only callable by EOA");
@@ -1745,7 +1967,7 @@ contract OffchainAggregator is Owned, OffchainAggregatorBilling, AggregatorV2V3I
   /**
    * @return answers are stored in fixed-point format, with this many digits of precision
    */
-  uint8 immutable public override decimals;
+  uint8 public override decimals;
 
   /**
    * @notice aggregator contract version
@@ -1851,7 +2073,7 @@ pragma solidity ^0.7.0;
  */
 contract SimpleWriteAccessController is AccessControllerInterface, Owned {
 
-  bool public checkEnabled;
+  bool public checkDisabled;
   mapping(address => bool) internal accessList;
 
   event AddedAccess(address user);
@@ -1861,7 +2083,7 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
 
   constructor()
   {
-    checkEnabled = true;
+//    checkEnabled = true;
   }
 
   /**
@@ -1878,7 +2100,7 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
     override
     returns (bool)
   {
-    return accessList[_user] || !checkEnabled;
+    return accessList[_user] || checkDisabled;
   }
 
   /**
@@ -1918,8 +2140,8 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
     external
     onlyOwner()
   {
-    if (!checkEnabled) {
-      checkEnabled = true;
+    if (checkDisabled) {
+      checkDisabled = false;
 
       emit CheckAccessEnabled();
     }
@@ -1932,8 +2154,8 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
     external
     onlyOwner()
   {
-    if (checkEnabled) {
-      checkEnabled = false;
+    if (!checkDisabled) {
+      checkDisabled = true;
 
       emit CheckAccessDisabled();
     }
@@ -1994,6 +2216,7 @@ pragma solidity ^0.7.1;
  * @notice Wrapper of OffchainAggregator which checks read access on Aggregator-interface methods
  */
 contract AccessControlledOffchainAggregator is OffchainAggregator, SimpleReadAccessController {
+  address constant public CLONER = address(0);
 
   constructor(
     uint32 _maximumGasPrice,
@@ -2007,9 +2230,10 @@ contract AccessControlledOffchainAggregator is OffchainAggregator, SimpleReadAcc
     AccessControllerInterface _billingAccessController,
     AccessControllerInterface _requesterAccessController,
     uint8 _decimals,
-    string memory description
-  )
-    OffchainAggregator(
+    string memory _description
+  ) 
+  /*
+  OffchainAggregator(
       _maximumGasPrice,
       _reasonableGasPrice,
       _microLinkPerEth,
@@ -2021,9 +2245,105 @@ contract AccessControlledOffchainAggregator is OffchainAggregator, SimpleReadAcc
       _billingAccessController,
       _requesterAccessController,
       _decimals,
-      description
-    ) {
+      _description
+  )
+  */
+  {
+    if (!initialized() && address(_link) != address(0)) {
+      __AccessConrolledOffchainAggregator_init(
+        _maximumGasPrice,
+        _reasonableGasPrice,
+        _microLinkPerEth,
+        _linkGweiPerObservation,
+        _linkGweiPerTransmission,
+        _link,
+        _minAnswer,
+        _maxAnswer,
+        _billingAccessController,
+        _requesterAccessController,
+        _decimals,
+        _description,
+        msg.sender
+      );
     }
+  }
+
+  function initialize(    
+    uint32 _maximumGasPrice,
+    uint32 _reasonableGasPrice,
+    uint32 _microLinkPerEth,
+    uint32 _linkGweiPerObservation,
+    uint32 _linkGweiPerTransmission,
+    LinkTokenInterface _link,
+    int192 _minAnswer,
+    int192 _maxAnswer,
+    AccessControllerInterface _billingAccessController,
+    AccessControllerInterface _requesterAccessController,
+    uint8 _decimals,
+    string memory _description,
+    address _newOwner
+  ) public override initializer 
+  {
+    require(CLONER == address(0) || msg.sender == CLONER || msg.sender == address(this), "only from cloner");
+
+    __AccessConrolledOffchainAggregator_init(
+      _maximumGasPrice,
+      _reasonableGasPrice,
+      _microLinkPerEth,
+      _linkGweiPerObservation,
+      _linkGweiPerTransmission,
+      _link,
+      _minAnswer,
+      _maxAnswer,
+      _billingAccessController,
+      _requesterAccessController,
+      _decimals,
+      _description,
+      _newOwner
+    );
+  }
+
+  /**
+  * @dev Initializes the contract setting the deployer as the initial owner.
+  */
+  function __AccessConrolledOffchainAggregator_init(
+    uint32 _maximumGasPrice,
+    uint32 _reasonableGasPrice,
+    uint32 _microLinkPerEth,
+    uint32 _linkGweiPerObservation,
+    uint32 _linkGweiPerTransmission,
+    LinkTokenInterface _link,
+    int192 _minAnswer,
+    int192 _maxAnswer,
+    AccessControllerInterface _billingAccessController,
+    AccessControllerInterface _requesterAccessController,
+    uint8 _decimals,
+    string memory _description,
+    address _newOwner
+
+  ) internal initializer {
+    __OffchainAggregator_init(    
+    _maximumGasPrice,
+    _reasonableGasPrice,
+    _microLinkPerEth,
+    _linkGweiPerObservation,
+    _linkGweiPerTransmission,
+    _link,
+    _minAnswer,
+    _maxAnswer,
+    _billingAccessController,
+    _requesterAccessController,
+    _decimals,
+    _description,
+    _newOwner
+    );
+    __AccessControlledOffchainAggregator_init_unchained(    
+    );
+  }
+
+  function __AccessControlledOffchainAggregator_init_unchained(
+  ) internal initializer {
+  }
 
   /*
    * Versioning

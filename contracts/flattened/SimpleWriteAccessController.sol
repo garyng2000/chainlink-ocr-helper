@@ -1,16 +1,68 @@
 // Sources flattened with hardhat v2.6.5 https://hardhat.org
 
-// File contracts/Owned.sol
+// File contracts/Initializable.sol
 
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
 /**
+ * @dev This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
+ * behind a proxy. Since a proxied contract can't have a constructor, it's common to move constructor logic to an
+ * external initializer function, usually called `initialize`. It then becomes necessary to protect this initializer
+ * function so it can only be called once. The {initializer} modifier provided by this contract will have this effect.
+ *
+ * TIP: To avoid leaving the proxy in an uninitialized state, the initializer function should be called as early as
+ * possible by providing the encoded function call as the `_data` argument to {ERC1967Proxy-constructor}.
+ *
+ * CAUTION: When used with inheritance, manual care must be taken to not invoke a parent initializer twice, or to ensure
+ * that all initializers are idempotent. This is not verified automatically as constructors are by Solidity.
+ */
+abstract contract Initializable {
+    /**
+     * @dev Indicates that the contract has been initialized.
+     */
+    bool private _initialized;
+
+    /**
+     * @dev Indicates that the contract is in the process of being initialized.
+     */
+    bool private _initializing;
+
+    /**
+     * @dev Modifier to protect an initializer function from being invoked twice.
+     */
+    modifier initializer() {
+        require(_initializing || !_initialized, "Initializable: contract is already initialized");
+
+        bool isTopLevelCall = !_initializing;
+        if (isTopLevelCall) {
+            _initializing = true;
+            _initialized = true;
+        }
+
+        _;
+
+        if (isTopLevelCall) {
+            _initializing = false;
+        }
+    }
+
+    function initialized() internal view returns(bool) {
+        return _initialized;
+    }
+}
+
+
+// File contracts/Owned.sol
+
+
+pragma solidity ^0.7.0;
+/**
  * @title The Owned contract
  * @notice A contract with helpers for basic contract ownership.
  */
-contract Owned {
+contract Owned is Initializable {
 
   address payable public owner;
   address private pendingOwner;
@@ -24,8 +76,25 @@ contract Owned {
     address indexed to
   );
 
-  constructor() {
-    owner = msg.sender;
+  // constructor() {
+  //   owner = msg.sender;
+  // }
+
+  /**
+  * @dev Initializes the contract setting the deployer as the initial owner.
+  */
+  function __Owned_init() internal initializer {
+      __Owned_init_unchained();
+  }
+
+  function __Owned_init_unchained() internal initializer {
+      _setOwner(msg.sender);
+  }
+
+  function _setOwner(address newOwner) private {
+      address oldOwner = owner;
+      owner = payable(newOwner);
+      emit OwnershipTransferred(oldOwner, newOwner);
   }
 
   /**
@@ -90,7 +159,7 @@ pragma solidity ^0.7.0;
  */
 contract SimpleWriteAccessController is AccessControllerInterface, Owned {
 
-  bool public checkEnabled;
+  bool public checkDisabled;
   mapping(address => bool) internal accessList;
 
   event AddedAccess(address user);
@@ -100,7 +169,7 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
 
   constructor()
   {
-    checkEnabled = true;
+//    checkEnabled = true;
   }
 
   /**
@@ -117,7 +186,7 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
     override
     returns (bool)
   {
-    return accessList[_user] || !checkEnabled;
+    return accessList[_user] || checkDisabled;
   }
 
   /**
@@ -157,8 +226,8 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
     external
     onlyOwner()
   {
-    if (!checkEnabled) {
-      checkEnabled = true;
+    if (checkDisabled) {
+      checkDisabled = false;
 
       emit CheckAccessEnabled();
     }
@@ -171,8 +240,8 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
     external
     onlyOwner()
   {
-    if (checkEnabled) {
-      checkEnabled = false;
+    if (!checkDisabled) {
+      checkDisabled = true;
 
       emit CheckAccessDisabled();
     }
