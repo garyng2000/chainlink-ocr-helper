@@ -20,7 +20,7 @@ namespace Chainlink.OCRConfig
         {
             return rx_strip_prefix.Replace(s, m => m.Groups[2].Value);
         }
-        public static SharedSecretEncryptions EncryptSecretKey(byte[][] ed25519ConfigPublicKeys, byte[] sharedSecret, byte[] ephemeralSecretKey)
+        public static SharedSecretEncryptions EncryptSecretKey(byte[][] x25519ConfigPublicKeys, byte[] sharedSecret, byte[] ephemeralSecretKey)
         {
             const int keyBlockSize = 16;
             if (sharedSecret == null || sharedSecret.Length != 16)
@@ -31,9 +31,9 @@ namespace Chainlink.OCRConfig
             {
                 throw new Exception("ephemeralSecretKey must be 32 bytes in length");
             }
-            if (ed25519ConfigPublicKeys == null || ephemeralSecretKey.Length == 0)
+            if (x25519ConfigPublicKeys == null || ephemeralSecretKey.Length == 0)
             {
-                throw new Exception("ed25519ConfigPublicKeys cannot be null or empty");
+                throw new Exception("x25519ConfigPublicKeys cannot be null or empty");
             }
             var keccak256 = new Sha3Keccack();
             var aesProvider = new AesCryptoServiceProvider()
@@ -44,12 +44,12 @@ namespace Chainlink.OCRConfig
                 KeySize = keyBlockSize * 8
             };
             var ephemeralSecretKeyDhPoint = GoX25519.Curve25519.ScalarMultiplication(ephemeralSecretKey, GoX25519.Curve25519.Basepoint);
-            var encryptedKeys = ed25519ConfigPublicKeys.Select((ed25519PublicKey, i) => {
-                if (ed25519PublicKey == null || ed25519PublicKey.Length != 32)
+            var encryptedKeys = x25519ConfigPublicKeys.Select((x25519PublicKey, i) => {
+                if (x25519PublicKey == null || x25519PublicKey.Length != 32)
                 {
-                    throw new Exception(string.Format("ed25519ConfigPublicKey {0} must be 32 bytes in length", i));
+                    throw new Exception(string.Format("x25519ConfigPublicKey {0} must be 32 bytes in length", i));
                 }
-                var oracleDhPoint = GoX25519.Curve25519.ScalarMultiplication(ephemeralSecretKey, ed25519PublicKey);
+                var oracleDhPoint = GoX25519.Curve25519.ScalarMultiplication(ephemeralSecretKey, x25519PublicKey);
                 var key = keccak256.CalculateHash(oracleDhPoint).Take(keyBlockSize).ToArray();
                 var aesEncryptor = aesProvider.CreateEncryptor(key, new byte[keyBlockSize] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
                 var encryptedKey = aesEncryptor.TransformFinalBlock(sharedSecret, 0, sharedSecret.Length);
@@ -63,24 +63,24 @@ namespace Chainlink.OCRConfig
 
             };
         }
-        public static SharedSecretEncryptions EncryptSecretKey(byte[][] ed25519PublicKeys)
+        public static SharedSecretEncryptions EncryptSecretKey(byte[][] x25519PublicKeys)
         {
             byte[] ephemeralSecretKey = new byte[32];
             byte[] sharedSecret = new byte[16];
 
             rng.GetBytes(ephemeralSecretKey);
             rng.GetBytes(sharedSecret);
-            return EncryptSecretKey(ed25519PublicKeys, sharedSecret, ephemeralSecretKey);
+            return EncryptSecretKey(x25519PublicKeys, sharedSecret, ephemeralSecretKey);
         }
 
-        public static SharedSecretEncryptions EncryptSecretKey(string[] ed25519PublicKeys)
+        public static SharedSecretEncryptions EncryptSecretKey(string[] x25519PublicKeys)
         {
             byte[] ephemeralSecretKey = new byte[32];
             byte[] sharedSecret = new byte[16];
 
             rng.GetBytes(ephemeralSecretKey);
             rng.GetBytes(sharedSecret);
-            return EncryptSecretKey(ed25519PublicKeys.Select(pk=> strip_prefix(pk).Trim().HexToByteArray()).ToArray(), sharedSecret, ephemeralSecretKey);
+            return EncryptSecretKey(x25519PublicKeys.Select(pk=> strip_prefix(pk).Trim().HexToByteArray()).ToArray(), sharedSecret, ephemeralSecretKey);
         }
 
     }
