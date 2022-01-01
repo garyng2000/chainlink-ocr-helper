@@ -83,12 +83,12 @@ contract Owned is Initializable {
   /**
   * @dev Initializes the contract setting the deployer as the initial owner.
   */
-  function __Owned_init() internal initializer {
-      __Owned_init_unchained();
+  function __Owned_init(address newOwner) internal initializer {
+      __Owned_init_unchained(newOwner);
   }
 
-  function __Owned_init_unchained() internal initializer {
-      _setOwner(msg.sender);
+  function __Owned_init_unchained(address newOwner) internal initializer {
+      _setOwner(newOwner);
   }
 
   function _setOwner(address newOwner) private {
@@ -160,6 +160,7 @@ pragma solidity ^0.7.0;
 contract SimpleWriteAccessController is AccessControllerInterface, Owned {
 
   bool public checkDisabled;
+  bool private _initialized;
   mapping(address => bool) internal accessList;
 
   event AddedAccess(address user);
@@ -169,7 +170,13 @@ contract SimpleWriteAccessController is AccessControllerInterface, Owned {
 
   constructor()
   {
-//    checkEnabled = true;
+    initialize(msg.sender);
+  }
+
+  function initialize(address newOwner) public {
+    require(!_initialized, "already initialized");
+    __Owned_init(newOwner);
+    _initialized = true;
   }
 
   /**

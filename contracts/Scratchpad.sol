@@ -2,8 +2,6 @@
 pragma solidity >=0.7.0;
 pragma abicoder v2;
 
-pragma solidity ^0.8.0;
-
 /// @title verifyIPFS
 /// @author Martin Lundfall (martin.lundfall@gmail.com)
 library verifyIPFS {
