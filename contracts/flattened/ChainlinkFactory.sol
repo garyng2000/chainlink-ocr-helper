@@ -377,6 +377,21 @@ interface OperatorInterface {
   function transferOwnership(address _to) external;
 }
 
+interface FluxAggregatorInterface {
+  function initialize(    
+    address _link,
+    uint128 _paymentAmount,
+    uint32 _timeout,
+    address _validator,
+    int256 _minSubmissionValue,
+    int256 _maxSubmissionValue,
+    uint8 _decimals,
+    string memory _description,
+    address newOwner
+    ) external;
+  function transferOwnership(address _to) external;
+}
+
 struct NewAggregatorParams {
     int192 minValue;
     int192 maxValue;
@@ -414,10 +429,12 @@ contract ChainlinkFactory is Owned {
     address public keeperImplementation;
     address public operatorImplementation;
     address public vrfImplementation;
+    address public fluxAggregatorImplementation;
     uint256 public ocrFee;
     uint256 public keeperFee;
     uint256 public operatorFee;
     uint256 public vrfFee;
+    uint256 public fluxAggregatorFee;
 
     event OCRAggregatorCreated(
         address indexed aggregator,
@@ -439,6 +456,11 @@ contract ChainlinkFactory is Owned {
         address indexed owner,
         address indexed sender
     );
+    event FluxAggregatorCreated(
+        address indexed operator,
+        address indexed owner,
+        address indexed sender
+    );    
     event NewContractCreated(
         address indexed implementation,
         address indexed newAddress
@@ -457,6 +479,7 @@ contract ChainlinkFactory is Owned {
         setKeeperImpl(impl[1], fees[1]);
         setOperatorImpl(impl[2], fees[2]);
         setVRFImpl(impl[3], fees[3]);
+        setFluxAggregatorImpl(impl[4], fees[4]);
     }
 
     function setOCRImpl(address impl, uint256 fee) public onlyOwner {
@@ -474,6 +497,10 @@ contract ChainlinkFactory is Owned {
     function setVRFImpl(address impl, uint256 fee) public onlyOwner {
         vrfImplementation = impl;
         vrfFee = fee;
+    }
+    function setFluxAggregatorImpl(address impl, uint256 fee) public onlyOwner {
+        fluxAggregatorImplementation = impl;
+        fluxAggregatorFee = fee;
     }
 
     function withdraw(uint256 amount) public onlyOwner {
@@ -548,6 +575,27 @@ contract ChainlinkFactory is Owned {
         OperatorInterface cloned = OperatorInterface(copy ? Clones.copy(operatorImplementation) : Clones.clone(operatorImplementation));
         cloned.initialize(link, msg.sender);
         emit OperatorCreated(
+            address(cloned),
+            msg.sender,
+            msg.sender
+        );
+        return address(cloned);
+    }
+    function cloneFluxAggregator(
+        address _link,
+        uint128 _paymentAmount,
+        uint32 _timeout,
+        address _validator,
+        int256 _minSubmissionValue,
+        int256 _maxSubmissionValue,
+        uint8 _decimals,
+        string memory _description,
+        bool copy
+    ) external payable returns (address) {
+        require(msg.value >= fluxAggregatorFee,"need fee to clone");
+        FluxAggregatorInterface cloned = FluxAggregatorInterface(copy ? Clones.copy(operatorImplementation) : Clones.clone(operatorImplementation));
+        cloned.initialize(_link, _paymentAmount, _timeout, _validator, _minSubmissionValue, _maxSubmissionValue, _decimals, _description, msg.sender);
+        emit FluxAggregatorCreated(
             address(cloned),
             msg.sender,
             msg.sender
