@@ -406,7 +406,9 @@ contract Scratchpad {
     function _slice(bytes calldata data, uint start) public pure returns(bytes memory) {
         return data[start:];
     }
-
+    function mul(uint256 a, uint256 b) public pure returns(uint256) {
+        return a*b;
+    }
     function muldiv(uint256 a, uint256 b, uint256 c) public pure returns(uint256) {
         return (a*b/c);
     }
@@ -414,7 +416,38 @@ contract Scratchpad {
         return (a + b - c);
     }
 
-    function getChainID() public pure returns (uint256) {
+    // FROM https://github.com/abdk-consulting/abdk-libraries-solidity/blob/16d7e1dd8628dfa2f88d5dadab731df7ada70bdd/ABDKMath64x64.sol#L687
+    function sqrt(uint256 _x) public pure returns (uint128) {
+        if (_x == 0) return 0;
+        else {
+            uint256 xx = _x;
+            uint256 r = 1;
+            if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
+            if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
+            if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
+            if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
+            if (xx >= 0x100) { xx >>= 8; r <<= 4; }
+            if (xx >= 0x10) { xx >>= 4; r <<= 2; }
+            if (xx >= 0x8) { r <<= 1; }
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1; // Seven iterations should be enough
+            uint256 r1 = _x / r;
+            return uint128 (r < r1 ? r : r1);
+        }
+    }
+
+    function sqrtPriceX96(uint256 p1InUSD18decimals, uint256 p1Decimals, uint256 p2InUSD18decimals,  uint256 p2Decimals) public pure returns (uint160 result) {
+        uint256 UNIT_0 = 10 ** p1Decimals;
+        uint256 UNIT_1 = 10 ** p2Decimals;
+        result = uint160(sqrt(mul(mul(p1InUSD18decimals, UNIT_1), (1 << 96)) / (mul(p2InUSD18decimals, UNIT_0))) << 48);
+    }
+    
+    function getChainID() public view returns (uint256) {
         uint256 id;
         assembly {
             id := chainid()
